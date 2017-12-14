@@ -16,4 +16,4 @@ COMMON_SOURCES =            \
 
 lib_LTLIBRARIES = libmoc.la
 libmoc_la_SOURCES = $(COMMON_SOURCES)
-libmoc_la_LIBADD =
+libmoc_la_LIBADD = -lpmix -lmpi
