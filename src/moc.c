@@ -3,6 +3,9 @@
 #include <pmix.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/syscall.h>
+#include <sched.h>
+#include <errno.h>
 #include "moc.h"
 
 uint32_t        node_local_procs    = 0;
@@ -14,7 +17,6 @@ MOC_Init (MPI_Comm comm)
     int             i, rc;
     char            *s_procNames        = NULL;
     char            *r_procNames        = NULL;
-//    uint32_t        node_local_procs    = 0;
     pmix_pdata_t    *lookup_pdata;
     int             dummy               = 0;
     int             lookup_range        = PMIX_RANGE_GLOBAL;
@@ -22,6 +24,26 @@ MOC_Init (MPI_Comm comm)
     pmix_proc_t     proc;
     int             numCPU;
     pmix_value_t    value;
+    cpu_set_t       mask;
+    size_t          n_cores             = 0;
+
+    /* We get the number of local cores to make basic checks regarding the # of MPI ranks that
+       are running locally (e.g., we do not support oversubscribing) */
+    /* Without HWLOC, OpenMP relies on sched_getaffinity to set affinities */
+    rc = sched_getaffinity (0, sizeof(mask), &mask);
+    if (rc == -1)
+    {
+        fprintf (stderr, "ERROR: syscall() failed (%s)\n", strerror (errno));
+        return EXIT_FAILURE;
+    }
+    for (i = 0; i < CPU_SETSIZE; ++i)
+    {
+        if (CPU_ISSET (i, &mask))
+        {
+            n_cores++;
+        }
+    }
+    printf ("Number of cores: %d\n", (int)n_cores);
 
     PMIx_Init (&myproc, NULL, 0);
 
@@ -51,6 +73,8 @@ MOC_Init (MPI_Comm comm)
         PMIx_Fence (&proc, 1, NULL, 0);
     
         node_local_procs = (uint32_t)nprocs;
+        if (node_local_procs > n_cores)
+            fprintf (stderr, "WARN: the number of ranks running on the node is greater than the number of cores. This will lead to problems when coordinating MPI and OpenMP");
 
         PMIX_VAL_SET (&value, uint32_t, node_local_procs);
         rc = PMIx_Put (PMIX_GLOBAL, PMIX_LOCAL_SIZE, &value);
