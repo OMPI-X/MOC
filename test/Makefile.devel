@@ -1,0 +1,41 @@
+# Manually edit paths for OMPIX and LLVM include/lib dirs
+
+CC=clang
+CFLAGS=-fopenmp -g
+MPI_COMPILE_FLAGS=$(shell mpicc --showme:compile)
+MPI_LINK_FLAGS=$(shell mpicc --showme:link)
+
+OMPIX_INC_DIR=/home/tjn/projects/ompi-ecp/install/include
+OMPIX_LIB_DIR=/home/tjn/projects/ompi-ecp/install/lib
+
+LLVM_INC_DIR=/home/tjn/projects/ompi-ecp/source/llvm/release_50/install/debug/include
+LLVM_LIB_DIR=/home/tjn/projects/ompi-ecp/source/llvm/release_50/install/debug/lib
+
+#all: dbg prod
+all: dbg
+
+dbg: mpi_omp_hello_dbg
+
+#prod: mpi_omp_hello_prod
+
+# # Production build of LLVM
+# mpi_omp_hello_prod: mpi_omp_hello.c
+# 	$(CC) -I/home/tjn/projects/ompi-ecp/source/llvm/release_50/install/release/include \
+# 		  -I/home/tjn/projects/ompi-ecp/install/include \
+# 		  -L/home/tjn/projects/ompi-ecp/install/lib \
+#           $(MPI_COMPILE_FLAGS) $(CFLAGS) $(MPI_LINK_FLAGS) \
+#           -o mpi_omp_hello.prod mpi_omp_hello.c -lpmix -lmoc
+
+# Debug build of LLVM
+mpi_omp_hello_dbg: mpi_omp_hello.c
+	$(CC) -I$(LLVM_INC_DIR) \
+		  -I$(OMPIX_INC_DIR) \
+	      -L$(LLVM_LIB_DIR) \
+	      -L$(OMPIX_LIB_DIR) \
+          $(MPI_COMPILE_FLAGS) $(CFLAGS) $(MPI_LINK_FLAGS) \
+          -o mpi_omp_hello.dbg mpi_omp_hello.c -lpmix -lmoc
+
+clean:
+	rm -f mpi_omp_hello
+	rm -f mpi_omp_hello.prod
+	rm -f mpi_omp_hello.dbg

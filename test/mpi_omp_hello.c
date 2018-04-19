@@ -26,10 +26,14 @@ main (int argc, char *argv[])
 {
     int nthreads, tid;
     moc_info_t *moc_policy_info;
+    int rank;
 
     fprintf (stderr, "[%s:%s:%d] Calling MPI_Init()...\n", __FILE__, __func__, __LINE__);
     MPI_Init (&argc, &argv);
     fprintf (stderr, "[%s:%s:%d] MPI_Init() succeeded\n", __FILE__, __func__, __LINE__);
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    fprintf (stderr, "[%s:%s:%d] HELLO PID: %d  RANK: %d\n", __FILE__, __func__, __LINE__, (int)getpid(), rank);
 
     MOC_Init (MPI_COMM_WORLD);
 
@@ -52,7 +56,21 @@ main (int argc, char *argv[])
         if (tid == 0) 
         {
             nthreads = omp_get_num_threads();
-            printf("Number of threads = %d\n", nthreads);
+            printf("[RANK:%d,TID:%d] Number of threads = %d\n", rank, tid, nthreads);
+        }
+
+        {
+            int i, nprocs, procids, nplaces;
+            nplaces = omp_get_num_places();
+
+            printf("[RANK:%d,TID:%d] num_places = %d\n", rank, tid, nplaces);
+            for (i = 0; i < nplaces; i++) {
+                nprocs = omp_get_place_num_procs(i);
+                omp_get_place_proc_ids(i, &procids);
+
+                printf("  [RANK:%d,TID:%d,PLACE:%d] num_places = %d, places_num_procs = %d, places_procids = %d\n",
+                        rank, tid, i, nplaces, nprocs, procids);
+            }
         }
 
     }  /* All threads join master thread and disband */
