@@ -1,3 +1,8 @@
+/*
+ * Copyright(c)		2017-2018	UT-Battelle, LLC
+ * 					All rights reserved.
+ */
+
 #ifndef MOC_COMMON_H
 #define MOC_COMMON_H
 
@@ -26,6 +31,7 @@ typedef int moc_status_t;
 
 #define MOC_SUCCESS                  0
 #define MOC_ERROR                   -1
+#define MOC_ERR_OUT_OF_RESOURCE	    -2
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

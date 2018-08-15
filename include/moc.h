@@ -1,3 +1,8 @@
+/*
+ * Copyrigth(c)		2017-2018	UT-Battelle, LLC
+ * 					All rights reserved.
+ */
+
 #ifndef MOC_H
 #define MOC_H
 
@@ -8,6 +13,11 @@
 #if defined(c_plusplus) || defined(__cplusplus)
 extern "C" {
 #endif
+
+#define LAYOUT_SUCCESS			MOC_SUCCESS
+#define LAYOUT_ERROR			MOC_ERROR
+#define LAYOUT_ERR_OUT_OF_RESOURCE	MOC_ERR_OUT_OF_RESOURCE
+#include "layouts.h"
 
 MOC_EXPORT moc_status_t MOC_Init (MPI_Comm comm);
 

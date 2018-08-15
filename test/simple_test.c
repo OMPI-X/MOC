@@ -1,3 +1,10 @@
+/*
+ * Copyright(c)		2017-2018	UT-Battelle, LLC
+ * 					All rights reserved.
+ */
+
+#define _GNU_SOURCE
+
 #include <moc.h>
 #include <stdio.h>
 #include <stdlib.h>
