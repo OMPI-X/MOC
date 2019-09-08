@@ -3,16 +3,16 @@
 #                       All rights reserved.
 #
 # See COPYING in top-level directory.
-# 
+#
 # Additional copyrights may follow
-# 
+#
 # $HEADER$
 #
 
 bin_PROGRAMS =
 
 libmoc_la_SOURCES =     \
-	layouts.h	\
+        layouts.h       \
         moc.h           \
         moc_common.h
 

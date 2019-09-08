@@ -8,14 +8,14 @@
 #define __LAYOUT_H
 
 typedef enum layout_policy
-{   
+{
     LAYOUT_POLICY_NONE = 0,
     LAYOUT_POLICY_RR,
     LAYOUT_POLICY_SPREAD,
 } layout_policy_t;
- 
+
 typedef enum rmaps_explicit_mode
-{   
+{
     RMAPS_EXPLICIT_MODE_NONE = 0,
     RMAPS_EXPLICIT_MODE_MANUAL,
     RMAPS_EXPLICIT_MODE_AUTO,
@@ -29,7 +29,7 @@ typedef struct rmaps_explicit_layout {
     layout_policy_t policy;
     int n_per_scope;
     int n_pes;
-    
+
     /* Specific to the manual mode */
     char *target;
     char *places;
@@ -60,8 +60,8 @@ _parse_places (char *places, uint64_t *num, uint8_t **locations)
     _l = *locations;
 
     /*
-     * The places string looks like X:-:-:X, where "X" is a place where thread X should be
-     * placed and "-" a place that should be left alone
+     * The places string looks like X:-:-:X, where "X" is a place where
+     * thread X should be placed and "-" a place that should be left alone
      */
 
     s = strdupa (places);
@@ -71,7 +71,8 @@ _parse_places (char *places, uint64_t *num, uint8_t **locations)
     {
         if (strcmp (token, "-") != 0)
         {
-            fprintf (stderr, "[%s:%s:%d] Assigning OMP thread # %d to place # %d\n", __FILE__, __func__, __LINE__, target_tid, idx);
+            fprintf (stderr, "[%s:%s:%d] Assigning OMP thread # %d to place # %d\n",
+                     __FILE__, __func__, __LINE__, target_tid, idx);
             _l[target_tid] = idx;
             cnt++;
             target_tid ++;
@@ -103,28 +104,41 @@ _parse_omp_layout_desc (char *layout_desc, int parent_mpi_rank, rmaps_explicit_l
 
     while (token != NULL)
     {
-        if (strcasecmp (token, "OpenMP") == 0 || strcasecmp (token, "openmp") == 0)
+        if ((strcasecmp (token, "OpenMP") == 0) ||
+            (strcasecmp (token, "openmp") == 0)   )
         {
             int _rank;
 
-            fprintf (stderr, "[%s:%s:%d] Found OpenMP block\n", __FILE__, __func__, __LINE__);
+            fprintf (stderr, "[%s:%s:%d] Found OpenMP block\n",
+                     __FILE__, __func__, __LINE__);
+
             token = strtok (NULL, delimiters);
             _rank = atoi (token);
-            fprintf (stderr, "[%s:%s:%d] Block for MPI rank: %d\n", __FILE__, __func__, __LINE__, _rank);
+
+            fprintf (stderr, "[%s:%s:%d] Block for MPI rank: %d\n",
+                     __FILE__, __func__, __LINE__, _rank);
+
             if (_rank == parent_mpi_rank)
-	    {
-	            token = strtok (NULL, delimiters);
-        	    (*layout).target = strdup (token);
+            {
+                token = strtok (NULL, delimiters);
+                (*layout).target = strdup (token);
 
-	            token = strtok (NULL, block_delimiters);
-        	    (*layout).places = strdup (token);
-	            fprintf (stderr, "[%s:%s:%d] Layout places: %s\n", __FILE__, __func__, __LINE__, (*layout).places);
+                token = strtok (NULL, block_delimiters);
+                (*layout).places = strdup (token);
 
-                    (*layout).locations = NULL; /* We need to make sure the ptr is set to NULL to have the expected behavior */
-	            rc = _parse_places (token, &((*layout).n_places), &((*layout).locations));
-	            if (rc != LAYOUT_SUCCESS)
-        	        return LAYOUT_ERROR;
-	    }
+                fprintf (stderr, "[%s:%s:%d] Layout places: %s\n",
+                         __FILE__, __func__, __LINE__, (*layout).places);
+
+                (*layout).locations = NULL; /* We need to make sure the ptr is
+                                             * set to NULL to have the expected
+                                             * behavior */
+
+                rc = _parse_places (token,
+                                    &((*layout).n_places),
+                                    &((*layout).locations));
+                if (rc != LAYOUT_SUCCESS)
+                    return LAYOUT_ERROR;
+            }
         }
         token = strtok (NULL, delimiters);
     }
