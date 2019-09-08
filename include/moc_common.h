@@ -32,6 +32,7 @@ typedef int moc_status_t;
 #define MOC_SUCCESS                  0
 #define MOC_ERROR                   -1
 #define MOC_ERR_OUT_OF_RESOURCE     -2
+#define MOC_ERR_NOT_FOUND           -3
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }

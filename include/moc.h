@@ -17,6 +17,7 @@ extern "C" {
 #define LAYOUT_SUCCESS              MOC_SUCCESS
 #define LAYOUT_ERROR                MOC_ERROR
 #define LAYOUT_ERR_OUT_OF_RESOURCE  MOC_ERR_OUT_OF_RESOURCE
+#define LAYOUT_ERR_NOT_FOUND        MOC_ERR_NOT_FOUND
 #include "layouts.h"
 
 MOC_EXPORT moc_status_t MOC_Init (MPI_Comm comm);

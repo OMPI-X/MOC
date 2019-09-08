@@ -98,6 +98,7 @@ _parse_omp_layout_desc (char *layout_desc, int parent_mpi_rank, rmaps_explicit_l
     char *token;
     const char delimiters[] = "[,]";
     const char block_delimiters[] = "[]";
+    int found = 0;
 
     s = strdupa (layout_desc);
     token = strtok (s, delimiters);
@@ -139,8 +140,15 @@ _parse_omp_layout_desc (char *layout_desc, int parent_mpi_rank, rmaps_explicit_l
                 if (rc != LAYOUT_SUCCESS)
                     return LAYOUT_ERROR;
             }
+            found = 1;
         }
         token = strtok (NULL, delimiters);
+    }
+
+    if (!found)
+    {
+        /* No OpenMP layout description found */
+        return LAYOUT_ERR_NOT_FOUND;
     }
 
     return LAYOUT_SUCCESS;

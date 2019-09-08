@@ -121,111 +121,146 @@ MOC_Init (MPI_Comm comm)
     {
         char *places = NULL;
         fprintf (stderr, "%d: YOUPI!! I have a layout! %s\n", getpid(), layout_env);
-        _parse_omp_layout_desc (layout_env, _local_rank_id, &layout);
-        if (strcmp (layout.target, "Core") == 0)
+
+        rc = _parse_omp_layout_desc (layout_env, _local_rank_id, &layout);
+
+        if (rc == LAYOUT_ERR_NOT_FOUND)
         {
-            for (i = 0; i < layout.n_places; i++)
+            fprintf (stderr, "[%s:%s:%d] WARN: No OpenMP layout provided\n",
+                     __FILE__, __func__, __LINE__);
+            /* No OMP layout info to process, so just return */
+            return MOC_SUCCESS;
+        }
+        else if (rc == LAYOUT_ERROR)
+        {
+            fprintf (stderr, "[%s:%s:%d] ERROR: Failed to parse OpenMP layout\n",
+                     __FILE__, __func__, __LINE__);
+            /* Early exit */
+            return MOC_ERROR;
+        }
+        else
+        {
+            if (strcmp (layout.target, "Core") == 0)
             {
-                if (places == NULL)
+                for (i = 0; i < layout.n_places; i++)
                 {
-                    asprintf (&places, "{%d},", layout.locations[i]);
-                }
-                else
-                {
-                    char *new_place = NULL;
-                    asprintf (&new_place, "{%d},", layout.locations[i]);
-                    strcat (places, new_place);
+                    if (places == NULL)
+                    {
+                        asprintf (&places, "{%d},", layout.locations[i]);
+                    }
+                    else
+                    {
+                        char *new_place = NULL;
+                        asprintf (&new_place, "{%d},", layout.locations[i]);
+                        strcat (places, new_place);
+                    }
                 }
             }
-        }
-        if (strcmp (layout.target, "PU") == 0)
-        {
-            char *ht_per_core_env = getenv ("MOC_HT_PER_CORE");
-            if (ht_per_core_env != NULL)
+            if (strcmp (layout.target, "PU") == 0)
             {
-                int ht_per_core = atoi (ht_per_core_env);
-                if (layout.locations[0] % ht_per_core != 0)
+                char *ht_per_core_env = getenv ("MOC_HT_PER_CORE");
+                if (ht_per_core_env == NULL)
                 {
-                    fprintf (stderr, "ERROR: threads are not places of HT boundaries\n");
+                    fprintf (stderr, "WARN: Missing 'MOC_HT_PER_CORE' for PU layout\n");
                 }
                 else
                 {
-                    int first_ht, last_ht;
-                    int core_num;
-                    for (int j = 0; j < layout.n_places; j++)
+                    int ht_per_core = atoi (ht_per_core_env);
+                    if (layout.locations[0] % ht_per_core != 0)
                     {
-                        int k;
-                        char *new_places = NULL;
-                        asprintf (&new_places, "{%d,", layout.locations[j]);
-                        first_ht = last_ht = layout.locations[j];
-                        for (k = 1; k < ht_per_core; k++)
+                        fprintf (stderr, "ERROR: threads are not places of HT boundaries\n");
+                    }
+                    else
+                    {
+                        int first_ht, last_ht;
+                        int core_num;
+                        for (int j = 0; j < layout.n_places; j++)
                         {
-                            char *detail = NULL;
-                            if (layout.locations[j+k] != last_ht + 1)
+                            int k;
+                            char *new_places = NULL;
+                            asprintf (&new_places, "{%d,", layout.locations[j]);
+                            first_ht = last_ht = layout.locations[j];
+                            for (k = 1; k < ht_per_core; k++)
                             {
-                                fprintf (stderr, "ERROR: threads are not places of HT boundaries!!\n");
-                                exit (1);
+                                char *detail = NULL;
+                                if (layout.locations[j+k] != last_ht + 1)
+                                {
+                                    fprintf (stderr, "ERROR: threads are not places of HT boundaries!!\n");
+                                    exit (1);
+                                }
+                                if (k != ht_per_core - 1)
+                                {
+                                    asprintf (&detail, "%d,", layout.locations[j+k]);
+                                }
+                                else
+                                {
+                                    asprintf (&detail, "%d", layout.locations[j+k]);
+                                }
+                                strcat (new_places, detail);
+                                last_ht = layout.locations[j+k];
                             }
-                            if (k != ht_per_core - 1)
+
+                            j = j + ht_per_core;
+                            if (j < layout.n_places)
                             {
-                                asprintf (&detail, "%d,", layout.locations[j+k]);
+                                strcat (new_places, "},");
                             }
                             else
                             {
-                                asprintf (&detail, "%d", layout.locations[j+k]);
+                                strcat (new_places, "}");
                             }
-                            strcat (new_places, detail);
-                            last_ht = layout.locations[j+k];
-                        }
 
-                        j = j + ht_per_core;
-                        if (j < layout.n_places)
-                        {
-                            strcat (new_places, "},");
-                        }
-                        else
-                        {
-                            strcat (new_places, "}");
-                        }
-
-                        core_num = first_ht / ht_per_core;
-                        fprintf (stderr, "HT %d - %d (core # %d) are used\n", first_ht, last_ht, core_num);
-                        if (places == NULL)
-                        {
-                            places = new_places;
-                        }
-                        else
-                        {
-                            strcat (places, new_places);
-                        }
-#if 0
-                        if (places == NULL)
-                        {
-                            places = strdup ("{");
-                            for (i = 0; i < layout.n_places; i++)
+                            core_num = first_ht / ht_per_core;
+                            fprintf (stderr, "HT %d - %d (core # %d) are used\n", first_ht, last_ht, core_num);
+                            if (places == NULL)
+                            {
+                                places = new_places;
+                            }
+                            else
+                            {
+                                strcat (places, new_places);
+                            }
+    #if 0
+                            if (places == NULL)
+                            {
+                                places = strdup ("{");
+                                for (i = 0; i < layout.n_places; i++)
+                                    for (i = 0; i < ht_per_core; i++)
+                                    {
+                                        char *details = NULL;
+                                        asprintf (&details, "%d,", layout.locations[i]);
+                                        strcat (&places, details);
+                                    }
+                                    strcat (&places, "},");
+                            }
+                            else
+                            {
+                                char *new_places = NULL;
+                                new_places = strdup ("{");
                                 for (i = 0; i < ht_per_core; i++)
-                                {
-                                    char *details = NULL;
-                                    asprintf (&details, "%d,", layout.locations[i]);
-                                    strcat (&places, details);
-                                }
-                                strcat (&places, "},");
-                        }
-                        else
-                        {
-                            char *new_places = NULL;
-                            new_places = strdup ("{");
-                            for (i = 0; i < ht_per_core; i++)
 
-                        }
-#endif
-                    } /* for */
-                } /* else */
-            } /* ht_per_core_env */
-        } /* strcmp PU */
+                            }
+    #endif
+                        } /* for */
+                    } /* else */
+                } /* ht_per_core_env */
+            } /* strcmp PU */
 
-        fprintf (stderr, "OMP Places: %s\n", places);
-        setenv ("OMP_PLACES", places, 1);
+            if (NULL == places)
+            {
+                fprintf (stderr, "[%s:%s:%d] ERROR: OMP places info is NULL\n",
+                         __FILE__, __func__, __LINE__);
+                return MOC_ERROR;
+            }
+            else
+            {
+
+                fprintf (stderr, "OMP Places: %s\n", places);
+                setenv ("OMP_PLACES", places, 1);
+                fprintf (stderr, "setenv OMP_PLACES=%s\n", places);
+            }
+
+        } /* else */
 
     } /* layout_env */
 
