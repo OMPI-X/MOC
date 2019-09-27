@@ -156,7 +156,8 @@ MOC_Init (MPI_Comm comm)
                     }
                 }
             }
-            if (strcmp (layout.target, "PU") == 0)
+            if ((strcmp (layout.target, "PU") == 0)||
+                (strcmp (layout.target, "HT") == 0) )
             {
                 char *ht_per_core_env = getenv ("MOC_HT_PER_CORE");
                 if (ht_per_core_env == NULL)
