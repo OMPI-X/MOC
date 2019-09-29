@@ -138,6 +138,13 @@ MOC_Init (MPI_Comm comm)
             /* Early exit */
             return MOC_ERROR;
         }
+        else if (NULL == layout.target)
+        {
+            fprintf (stderr, "[%s:%s:%d] ERROR: Failed to get target from layout\n",
+                     __FILE__, __func__, __LINE__);
+            /* Early exit */
+            return MOC_ERROR;
+        }
         else
         {
             if (strcmp (layout.target, "Core") == 0)
